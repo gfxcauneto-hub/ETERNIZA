@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: eterniza-amor
+    runtime: docker
+    plan: starter
+    healthCheckPath: /api/health
+    envVars:
+      - key: EFI_ENVIRONMENT
+        value: production
+      - key: EFI_CLIENT_ID
+        sync: false
+      - key: EFI_CLIENT_SECRET
+        sync: false
+      - key: EFI_PIX_KEY
+        sync: false
+      - key: EFI_P12_BASE64
+        sync: false
