@@ -216,7 +216,20 @@ function ContactModal({
   );
 }
 
+function useStaticSceneThumbnails() {
+  const [staticThumbnails] = useState(() => {
+    if (typeof navigator === "undefined") return false;
+    const ua = navigator.userAgent;
+    const apple = /iPhone|iPad|iPod|Macintosh/.test(ua);
+    const chrome = /CriOS\//.test(ua) ||
+      (/Chrome\//.test(ua) && !/Edg\/|OPR\/|SamsungBrowser\//.test(ua));
+    return apple && chrome;
+  });
+  return staticThumbnails;
+}
+
 export default function Home() {
+  const staticThumbnails = useStaticSceneThumbnails();
   const [screen, setScreen] = useState<Screen>(21);
   const [selectedScene, setSelectedScene] = useState<SceneId>("reencontro");
   const [hasChosenScene, setHasChosenScene] = useState(false);
@@ -321,7 +334,7 @@ export default function Home() {
   }, [screen]);
 
   useEffect(() => {
-    if (screen !== 21) return;
+    if (screen !== 21 || staticThumbnails) return;
     const videos = Array.from(document.querySelectorAll<HTMLVideoElement>("#screen-21 video"));
     const visible = new Set<HTMLVideoElement>();
     const play = (video: HTMLVideoElement) => {
@@ -374,7 +387,7 @@ export default function Home() {
         video.pause();
       });
     };
-  }, [screen]);
+  }, [screen, staticThumbnails]);
 
   useEffect(() => {
     let cancelled = false;
@@ -481,6 +494,10 @@ export default function Home() {
     <div id="app" className="restauro etz-bloco etz-bloco-v1">
       <style>{`
         #screen-21 video { pointer-events: none; }
+        #screen-21 .estilo__thumbnail {
+          display: block; width: 100%; height: 100%; object-fit: cover;
+          background: #000; pointer-events: none;
+        }
         #screen-21 video::-webkit-media-controls,
         #screen-21 video::-webkit-media-controls-panel,
         #screen-21 video::-webkit-media-controls-start-playback-button,
@@ -505,7 +522,11 @@ export default function Home() {
                 aria-label={item.title}
                 onClick={() => chooseScene(item.id)}
               >
-                <video poster={item.poster} muted loop playsInline autoPlay controls={false} disablePictureInPicture disableRemotePlayback preload="auto" src={item.video} />
+                {staticThumbnails ? (
+                  <img className="estilo__thumbnail" src={item.poster} alt="" decoding="async" draggable={false} />
+                ) : (
+                  <video poster={item.poster} muted loop playsInline autoPlay controls={false} disablePictureInPicture disableRemotePlayback preload="auto" src={item.video} />
+                )}
                 <span className="estilo__txt">
                   <b>{item.title}</b>
                 </span>
