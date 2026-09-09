@@ -154,7 +154,7 @@ function ContactModal({
   onClose: () => void;
   onSubmit: () => void;
   submitting: boolean;
-  submitError: boolean;
+  submitError: string | boolean;
 }) {
   const valid = /.+@.+\..+/.test(email) && whatsapp.replace(/\D/g, "").length === 11;
   return (
@@ -186,7 +186,7 @@ function ContactModal({
           inputMode="tel"
           maxLength={15}
         />
-        {submitError && <p className="ctt__error" role="alert">Não foi possível gerar seu PIX. Tente novamente.</p>}
+        {submitError && <p className="ctt__error" role="alert">{typeof submitError === "string" ? submitError : "Não foi possível gerar seu PIX. Tente novamente."}</p>}
         <button className={`cta cta--inline cta--subscribe ${valid ? "" : "is-disabled"}`} type="button" disabled={!valid || submitting} onClick={onSubmit}>
           {submitting ? "GERANDO SEU PIX…" : "GERAR MEU PIX"}
         </button>
@@ -219,7 +219,7 @@ export default function Home() {
   const [pixQrCode, setPixQrCode] = useState("");
   const [pixTxid, setPixTxid] = useState("");
   const [creatingCharge, setCreatingCharge] = useState(false);
-  const [chargeError, setChargeError] = useState(false);
+  const [chargeError, setChargeError] = useState<string | boolean>(false);
   const [chargePaid, setChargePaid] = useState(false);
 
   const scene = useMemo(() => scenes.find((item) => item.id === selectedScene) ?? scenes[0], [selectedScene]);
@@ -368,16 +368,17 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ amount: ticketPrice, email, whatsapp }),
       });
-      if (!response.ok) throw new Error("Pix creation failed");
-      const charge = await response.json() as PixChargeResponse;
+      const payload = await response.json() as Partial<PixChargeResponse> & { detail?: string; providerStatus?: number | null };
+      if (!response.ok) throw new Error(payload.detail ? `Efí: ${payload.detail}${payload.providerStatus ? ` (HTTP ${payload.providerStatus})` : ""}` : "Não foi possível gerar seu PIX. Tente novamente.");
+      const charge = payload as PixChargeResponse;
       setPixCode(charge.pixCopiaECola);
       setPixQrCode(charge.qrCodeDataUrl);
       setPixTxid(charge.txid);
       setCountdownSeconds(charge.expiresInSeconds);
       setContactOpen(false);
       setPixVisible(true);
-    } catch {
-      setChargeError(true);
+    } catch (error) {
+      setChargeError(error instanceof Error ? error.message : true);
     } finally {
       setCreatingCharge(false);
     }
