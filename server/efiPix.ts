@@ -37,6 +37,24 @@ function getConfig(): EfiConfig {
   };
 }
 
+export function getEfiConfigStatus() {
+  const p12Base64 = `${process.env.EFI_P12_PART_A ?? ""}${process.env.EFI_P12_PART_B ?? ""}${process.env.EFI_P12_PART_C ?? ""}` || process.env.EFI_P12_BASE64 || "";
+  let p12Bytes = 0;
+  try {
+    p12Bytes = Buffer.from(p12Base64, "base64").length;
+  } catch {
+    p12Bytes = 0;
+  }
+  return {
+    environment: process.env.EFI_ENVIRONMENT || "not-set",
+    clientIdConfigured: Boolean(process.env.EFI_CLIENT_ID),
+    clientSecretConfigured: Boolean(process.env.EFI_CLIENT_SECRET),
+    pixKeyConfigured: Boolean(process.env.EFI_PIX_KEY),
+    p12Configured: p12Bytes > 0,
+    p12Bytes,
+  };
+}
+
 function createHttpClient(config = getConfig()): AxiosInstance {
   return axios.create({
     baseURL: config.baseUrl,
