@@ -71,7 +71,7 @@ const scenes: Scene[] = [
     id: "abracojesus",
     title: "O abraço com Jesus",
     video: `${STORAGE}estilo-jesus-v2_bf4fca79.mp4`,
-    poster: `${STORAGE}estilo-jesus-v2-poster_163a61af.webp`,
+    poster: `${STORAGE}estilo-jesus-v2_ultimo-quadro_sem-bola-de-luz.png`,
     onePhoto: true,
   },
   {
