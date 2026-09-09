@@ -322,12 +322,58 @@ export default function Home() {
 
   useEffect(() => {
     if (screen !== 21) return;
-    const videos = document.querySelectorAll<HTMLVideoElement>("#screen-21 video");
-    const timers = Array.from(videos, (video) => window.setTimeout(() => {
-      // O navegador já iniciou o preload via HTML; chamar load() aqui reinicia o buffer e causa travamento.
-      video.play().catch(() => undefined);
-    }, 0));
-    return () => timers.forEach(window.clearTimeout);
+    const videos = Array.from(document.querySelectorAll<HTMLVideoElement>("#screen-21 video"));
+    const visible = new Set<HTMLVideoElement>();
+    const play = (video: HTMLVideoElement) => {
+      if (document.hidden || !visible.has(video)) return;
+      video.defaultMuted = true;
+      video.muted = true;
+      video.setAttribute("muted", "");
+      video.playsInline = true;
+      video.setAttribute("webkit-playsinline", "");
+      video.controls = false;
+      if (video.paused) void video.play().catch(() => {
+        // Retry on readiness, visibility or a user gesture if autoplay was blocked.
+      });
+    };
+    const resume = () => videos.forEach(play);
+    const onVisibility = () => {
+      if (document.hidden) videos.forEach((video) => video.pause());
+      else resume();
+    };
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        const video = entry.target as HTMLVideoElement;
+        if (entry.isIntersecting) {
+          visible.add(video);
+          play(video);
+        } else {
+          visible.delete(video);
+          video.pause();
+        }
+      });
+    }, { threshold: 0.01 });
+    videos.forEach((video) => {
+      video.addEventListener("loadeddata", resume);
+      video.addEventListener("canplay", resume);
+      observer.observe(video);
+    });
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("pageshow", resume);
+    document.addEventListener("touchend", resume, { passive: true });
+    document.addEventListener("click", resume);
+    return () => {
+      observer.disconnect();
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("pageshow", resume);
+      document.removeEventListener("touchend", resume);
+      document.removeEventListener("click", resume);
+      videos.forEach((video) => {
+        video.removeEventListener("loadeddata", resume);
+        video.removeEventListener("canplay", resume);
+        video.pause();
+      });
+    };
   }, [screen]);
 
   useEffect(() => {
@@ -433,6 +479,16 @@ export default function Home() {
 
   return (
     <div id="app" className="restauro etz-bloco etz-bloco-v1">
+      <style>{`
+        #screen-21 video { pointer-events: none; }
+        #screen-21 video::-webkit-media-controls,
+        #screen-21 video::-webkit-media-controls-panel,
+        #screen-21 video::-webkit-media-controls-start-playback-button,
+        #screen-21 video::-webkit-media-controls-overlay-play-button {
+          display: none !important;
+          -webkit-appearance: none;
+        }
+      `}</style>
       <section className={screenClass(21, screen)} id="screen-21" data-screen="21">
         <div className="screen__scroll center">
           <header className="badge">
@@ -449,7 +505,7 @@ export default function Home() {
                 aria-label={item.title}
                 onClick={() => chooseScene(item.id)}
               >
-                <video poster={item.poster} muted loop playsInline autoPlay preload="auto" src={item.video} />
+                <video poster={item.poster} muted loop playsInline autoPlay controls={false} disablePictureInPicture disableRemotePlayback preload="auto" src={item.video} />
                 <span className="estilo__txt">
                   <b>{item.title}</b>
                 </span>
