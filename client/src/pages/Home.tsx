@@ -303,8 +303,9 @@ export default function Home() {
     if (screen !== 21) return;
     const videos = document.querySelectorAll<HTMLVideoElement>("#screen-21 video");
     const timers = Array.from(videos, (video, index) => window.setTimeout(() => {
+      video.load();
       video.play().catch(() => undefined);
-    }, 1200 + index * 650));
+    }, index === 0 ? 0 : 700 + index * 350));
     return () => timers.forEach(window.clearTimeout);
   }, [screen]);
 
@@ -407,7 +408,7 @@ export default function Home() {
           <h1 className="heading">Escolha o cenário</h1>
           <p className="estilo-sub">Toque na cena e veja novamente quem fez tanta&nbsp;falta 💛</p>
           <div className="estilos">
-            {scenes.map((item) => (
+            {scenes.map((item, index) => (
               <button
                 className={`estilo ${hasChosenScene && selectedScene === item.id ? "is-picked" : ""}`}
                 key={item.id}
@@ -415,7 +416,7 @@ export default function Home() {
                 aria-label={item.title}
                 onClick={() => chooseScene(item.id)}
               >
-                <video poster={item.poster} muted loop playsInline preload="none" src={item.video} />
+                <video poster={item.poster} muted loop playsInline autoPlay={index === 0} preload={index === 0 ? "auto" : "metadata"} src={item.video} />
                 <span className="estilo__txt">
                   <b>{item.title}</b>
                 </span>
