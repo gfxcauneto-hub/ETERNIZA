@@ -1,0 +1,18 @@
+PROJETO COMPLETO ETERNIZA AMOR
+
+IMPORTANTE: não abra client/index.html com duplo clique.
+Este projeto possui React e backend Node.js para o PIX e precisa ser iniciado por um servidor.
+
+FORMA MAIS FÁCIL:
+1. Instale o Node.js 22: https://nodejs.org/
+2. Windows: clique duas vezes em INICIAR-WINDOWS.bat
+3. macOS/Linux: abra o terminal nesta pasta e execute: sh INICIAR-MAC-LINUX.sh
+4. Abra http://localhost:3000
+
+PARA GITHUB/RENDER:
+1. Envie toda esta pasta para o repositório, exceto arquivos .env e certificados.
+2. No Render, escolha runtime Docker.
+3. Cadastre EFI_CLIENT_ID, EFI_CLIENT_SECRET, EFI_PIX_KEY, EFI_P12_BASE64 e EFI_ENVIRONMENT=production como variáveis secretas.
+
+O certificado P12 e as credenciais reais não estão no ZIP por segurança.
+Todas as 20 imagens, vídeos, posters e ícones usados pelo site estão em client/public/assets.
