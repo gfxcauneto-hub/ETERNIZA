@@ -1,4 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
+import QRCode from "qrcode";
+import { createCharge } from "../_efi";
 
 const TICKET_VALUES = [12.9, 14.97, 19.9, 24.9, 27.96];
 
@@ -19,8 +21,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { createCharge } = await import("../_efi");
-    const QRCode = (await import("qrcode")).default;
     const charge = await createCharge(amount) as { txid: string; status: string; pixCopiaECola: string; valor: { original: string } };
     const qrCodeDataUrl = await QRCode.toDataURL(charge.pixCopiaECola, { errorCorrectionLevel: "M", margin: 2, width: 420 });
     return res.status(201).json({ txid: charge.txid, status: charge.status, amount: charge.valor.original, pixCopiaECola: charge.pixCopiaECola, qrCodeDataUrl, expiresInSeconds: 900 });
