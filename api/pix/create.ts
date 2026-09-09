@@ -1,10 +1,10 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import QRCode from "qrcode";
 import { z } from "zod";
-import { createPixCharge, isAllowedTicketValue } from "../../server/efiPix";
+import { createCharge, allowed } from "../_efi";
 
 const input = z.object({
-  amount: z.number().refine(isAllowedTicketValue),
+  amount: z.number().refine(allowed),
   email: z.string().email().max(320),
   whatsapp: z.string().regex(/^\(\d{2}\) \d{5}-\d{4}$/),
 });
@@ -39,7 +39,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!parsed.success) return res.status(400).json({ error: "Dados do pagamento inválidos" });
 
   try {
-    const charge = await createPixCharge(parsed.data.amount) as {
+    const charge = await createCharge(parsed.data.amount) as {
       txid: string;
       status: string;
       pixCopiaECola: string;
