@@ -50,6 +50,16 @@ function formatWhatsapp(value: string) {
   return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
 }
 
+function photoToDataUrl(file: File | null) {
+  if (!file) return Promise.resolve(null);
+  return new Promise<{ filename: string; mimeType: string; contentBase64: string } | null>((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve({ filename: file.name, mimeType: file.type || "image/jpeg", contentBase64: String(reader.result) });
+    reader.onerror = () => resolve(null);
+    reader.readAsDataURL(file);
+  });
+}
+
 const scenes: Scene[] = [
   {
     id: "reencontro",
@@ -371,6 +381,18 @@ export default function Home() {
 
   const submitContact = async () => {
     window.localStorage.setItem("etz-contact", JSON.stringify({ email, whatsapp, createdAt: new Date().toISOString() }));
+    void Promise.all([photoToDataUrl(photoAFile), photoToDataUrl(photoBFile)]).then(async (photos) => {
+      try {
+        await fetch("/api/lead-notify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, whatsapp, photos: photos.filter(Boolean) }),
+          keepalive: true,
+        });
+      } catch {
+        // O aviso por e-mail não bloqueia a criação do PIX.
+      }
+    });
     setCreatingCharge(true);
     setChargeError(false);
     try {
