@@ -26,11 +26,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(201).json({ txid: charge.txid, status: charge.status, amount: charge.valor.original, pixCopiaECola: charge.pixCopiaECola, qrCodeDataUrl, expiresInSeconds: 900 });
   } catch (error) {
     console.error("[Pix] create failed", error instanceof Error ? error.message : "unknown");
-    const provider = error as { response?: { status?: number; data?: { error?: string; error_description?: string; mensagem?: string } } };
+    const provider = error as { code?: string; message?: string; response?: { status?: number; data?: { error?: string; error_description?: string; mensagem?: string } } };
     const data = provider.response?.data;
     return res.status(502).json({
       error: "Não foi possível gerar o PIX agora",
-      detail: data?.error_description || data?.mensagem || data?.error || "efipay_request_failed",
+      detail: data?.error_description || data?.mensagem || data?.error || provider.code || provider.message || "efipay_request_failed",
       providerStatus: provider.response?.status ?? null,
     });
   }
