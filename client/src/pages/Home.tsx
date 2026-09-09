@@ -84,18 +84,29 @@ function screenClass(screen: Screen, current: Screen, extra = "") {
 
 function ProofCarousel() {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [leavingIndex, setLeavingIndex] = useState<number | null>(null);
+  const [sliding, setSliding] = useState(false);
 
   useEffect(() => {
-    const timer = window.setInterval(() => setActiveIndex((index) => (index + 1) % assets.proof.length), 6500);
+    const timer = window.setInterval(() => {
+      setActiveIndex((index) => {
+        setLeavingIndex(index);
+        setSliding(true);
+        window.setTimeout(() => {
+          setLeavingIndex(null);
+          setSliding(false);
+        }, 1150);
+        return (index + 1) % assets.proof.length;
+      });
+    }, 6500);
     return () => window.clearInterval(timer);
   }, []);
 
   return (
     <div className="carousel carousel--proof" aria-label="Depoimentos reais">
       <div className="carousel__track">
-        <div className="carousel__slide is-center proof-slide-enter" key={assets.proof[activeIndex]}>
-          <img src={assets.proof[activeIndex]} alt="Depoimento real" loading="eager" decoding="async" />
-        </div>
+        {sliding && leavingIndex !== null && <div className="carousel__slide is-center proof-slide-out" key={`out-${assets.proof[leavingIndex]}`}><img src={assets.proof[leavingIndex]} alt="Depoimento real" loading="eager" decoding="async" /></div>}
+        <div className={`carousel__slide is-center ${sliding ? "proof-slide-in" : "proof-slide-still"}`} key={`in-${assets.proof[activeIndex]}`}><img src={assets.proof[activeIndex]} alt="Depoimento real" loading="eager" decoding="async" /></div>
       </div>
     </div>
   );
@@ -302,10 +313,10 @@ export default function Home() {
   useEffect(() => {
     if (screen !== 21) return;
     const videos = document.querySelectorAll<HTMLVideoElement>("#screen-21 video");
-    const timers = Array.from(videos, (video, index) => window.setTimeout(() => {
+    const timers = Array.from(videos, (video) => window.setTimeout(() => {
       video.load();
       video.play().catch(() => undefined);
-    }, index === 0 ? 0 : 700 + index * 350));
+    }, 0));
     return () => timers.forEach(window.clearTimeout);
   }, [screen]);
 
@@ -408,7 +419,7 @@ export default function Home() {
           <h1 className="heading">Escolha o cenário</h1>
           <p className="estilo-sub">Toque na cena e veja novamente quem fez tanta&nbsp;falta 💛</p>
           <div className="estilos">
-            {scenes.map((item, index) => (
+            {scenes.map((item) => (
               <button
                 className={`estilo ${hasChosenScene && selectedScene === item.id ? "is-picked" : ""}`}
                 key={item.id}
@@ -416,7 +427,7 @@ export default function Home() {
                 aria-label={item.title}
                 onClick={() => chooseScene(item.id)}
               >
-                <video poster={item.poster} muted loop playsInline autoPlay={index === 0} preload={index === 0 ? "auto" : "metadata"} src={item.video} />
+                <video poster={item.poster} muted loop playsInline autoPlay preload="auto" src={item.video} />
                 <span className="estilo__txt">
                   <b>{item.title}</b>
                 </span>
