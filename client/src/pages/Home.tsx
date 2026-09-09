@@ -314,7 +314,7 @@ export default function Home() {
     if (screen !== 21) return;
     const videos = document.querySelectorAll<HTMLVideoElement>("#screen-21 video");
     const timers = Array.from(videos, (video) => window.setTimeout(() => {
-      video.load();
+      // O navegador já iniciou o preload via HTML; chamar load() aqui reinicia o buffer e causa travamento.
       video.play().catch(() => undefined);
     }, 0));
     return () => timers.forEach(window.clearTimeout);
