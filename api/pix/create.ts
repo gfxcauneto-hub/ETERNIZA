@@ -1,50 +1,27 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import QRCode from "qrcode";
-import { z } from "zod";
-import { createCharge, allowed } from "../_efi";
 
-const input = z.object({
-  amount: z.number().refine(allowed),
-  email: z.string().email().max(320),
-  whatsapp: z.string().regex(/^\(\d{2}\) \d{5}-\d{4}$/),
-});
+const TICKET_VALUES = [12.9, 14.97, 19.9, 24.9, 27.96];
 
-const attempts = new Map<string, { count: number; resetAt: number }>();
-
-function address(req: VercelRequest) {
-  return String(req.headers["x-forwarded-for"] || req.socket.remoteAddress || "unknown").split(",")[0].trim();
+function allowed(value: number) {
+  return TICKET_VALUES.some((ticket) => Math.abs(ticket - value) < 0.001);
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  res.setHeader("Cache-Control", "no-store");
+  res.setHeader("Cache-Control", "no-store, max-age=0");
   if (req.method !== "POST") return res.status(405).json({ error: "Método não permitido" });
 
-  const origin = req.headers.origin;
-  if (origin) {
-    try {
-      if (new URL(origin).host !== req.headers.host) return res.status(403).json({ error: "Origem inválida" });
-    } catch {
-      return res.status(403).json({ error: "Origem inválida" });
-    }
+  const body = req.body && typeof req.body === "object" ? req.body as Record<string, unknown> : {};
+  const amount = Number(body.amount);
+  const email = String(body.email || "");
+  const whatsapp = String(body.whatsapp || "");
+  if (!Number.isFinite(amount) || !allowed(amount) || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !/^\(\d{2}\) \d{5}-\d{4}$/.test(whatsapp)) {
+    return res.status(400).json({ error: "Dados do pagamento inválidos" });
   }
 
-  const key = address(req);
-  const now = Date.now();
-  const current = attempts.get(key);
-  if (!current || current.resetAt <= now) attempts.set(key, { count: 1, resetAt: now + 15 * 60_000 });
-  else if (current.count >= 5) return res.status(429).json({ error: "Muitas tentativas. Aguarde alguns minutos." });
-  else current.count += 1;
-
-  const parsed = input.safeParse(req.body);
-  if (!parsed.success) return res.status(400).json({ error: "Dados do pagamento inválidos" });
-
   try {
-    const charge = await createCharge(parsed.data.amount) as {
-      txid: string;
-      status: string;
-      pixCopiaECola: string;
-      valor: { original: string };
-    };
+    const { createCharge } = await import("../_efi");
+    const QRCode = (await import("qrcode")).default;
+    const charge = await createCharge(amount) as { txid: string; status: string; pixCopiaECola: string; valor: { original: string } };
     const qrCodeDataUrl = await QRCode.toDataURL(charge.pixCopiaECola, { errorCorrectionLevel: "M", margin: 2, width: 420 });
     return res.status(201).json({ txid: charge.txid, status: charge.status, amount: charge.valor.original, pixCopiaECola: charge.pixCopiaECola, qrCodeDataUrl, expiresInSeconds: 900 });
   } catch (error) {
