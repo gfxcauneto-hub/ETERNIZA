@@ -50,6 +50,15 @@ function formatWhatsapp(value: string) {
   return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
 }
 
+function trackEvent(name: string, params: Record<string, unknown> = {}) {
+  const analyticsWindow = window as Window & {
+    gtag?: (command: string, eventName: string, eventParams?: Record<string, unknown>) => void;
+    clarity?: (command: string, key: string, value: string) => void;
+  };
+  analyticsWindow.gtag?.("event", name, params);
+  analyticsWindow.clarity?.("set", "funnel_event", name);
+}
+
 function photoToDataUrl(file: File | null) {
   if (!file) return Promise.resolve(null);
   return new Promise<{ filename: string; mimeType: string; contentBase64: string } | null>((resolve) => {
@@ -282,7 +291,8 @@ export default function Home() {
         const response = await fetch(`/api/pix/status/${encodeURIComponent(pixTxid)}`, { credentials: "same-origin" });
         if (!response.ok) return;
         const data = await response.json() as { paid?: boolean };
-        if (!cancelled && data.paid) {
+        if (!cancelled && data.paid && !chargePaid) {
+          trackEvent("purchase", { currency: "BRL", value: ticketPrice, transaction_id: pixTxid });
           setChargePaid(true);
           setScreen(7);
         }
@@ -296,7 +306,7 @@ export default function Home() {
       cancelled = true;
       window.clearInterval(timer);
     };
-  }, [pixTxid]);
+  }, [pixTxid, chargePaid, ticketPrice]);
 
   useEffect(() => {
     const active = document.querySelector<HTMLElement>(".screen.is-active .screen__scroll");
@@ -452,6 +462,7 @@ export default function Home() {
   };
 
   const submitContact = async () => {
+    trackEvent("generate_lead", { currency: "BRL", value: ticketPrice, method: "popup_contact" });
     window.localStorage.setItem("etz-contact", JSON.stringify({ email, whatsapp, createdAt: new Date().toISOString() }));
     void Promise.all([photoToDataUrl(photoAFile), photoToDataUrl(photoBFile)]).then(async (photos) => {
       try {
@@ -487,6 +498,11 @@ export default function Home() {
     } finally {
       setCreatingCharge(false);
     }
+  };
+
+  const openContact = () => {
+    trackEvent("begin_checkout", { currency: "BRL", value: ticketPrice, method: "pix" });
+    setContactOpen(true);
   };
 
   const copyPix = async () => {
@@ -624,7 +640,7 @@ export default function Home() {
           <h1 className="heading">Pra onde enviamos a sua <span className="accent">cópia</span> do vídeo?</h1>
           <p className="help-text">Você vê o vídeo aqui na hora e ainda mandamos uma cópia no seu WhatsApp e e-mail pra guardar pra sempre. <strong>Confira se estão corretos.</strong></p>
         </div>
-        <div className="cta-dock"><button className="cta" type="button" onClick={() => setContactOpen(true)}>GERAR MEU PIX</button></div>
+          <div className="cta-dock"><button className="cta" type="button" onClick={openContact}>GERAR MEU PIX</button></div>
       </section>
 
       <section className={screenClass(6, screen, pixVisible ? "is-pagando" : "")} id="screen-6" data-screen="6">
@@ -651,7 +667,7 @@ export default function Home() {
               </button>
             </div>
             <div className="cocheck__head"><span className="cocheck__bolt">⚡</span> Pague com <b>PIX</b> · aprovação na hora</div>
-            {!pixVisible && <div className="cocheck__body" id="coCta"><button className="pix-copy pix-copy--hero cta--subscribe" type="button" onClick={() => setContactOpen(true)}>QUERO VIVER ESTE REENCONTRO!</button><p className="co-cta-secure">🔒 Pagamento seguro via PIX · aprovação na hora</p></div>}
+            {!pixVisible && <div className="cocheck__body" id="coCta"><button className="pix-copy pix-copy--hero cta--subscribe" type="button" onClick={openContact}>QUERO VIVER ESTE REENCONTRO!</button><p className="co-cta-secure">🔒 Pagamento seguro via PIX · aprovação na hora</p></div>}
             {pixVisible && (
               <div className="cocheck__body" id="coPix">
                 <span className="pix-selo">⚡ PIX · aprovação na hora</span>
@@ -687,7 +703,7 @@ export default function Home() {
           <div className="social"><div className="social__rating">⭐️ 4,9/5 · milhares de famílias emocionadas</div><h2 className="social__title">Amado por milhares de<br />famílias brasileiras 👇</h2>{screen === 6 && <ProofCarousel />}</div>
           <footer className="footer"><a href="https://eternizamemorias.com.br/termos" target="_blank" rel="noreferrer">Termos de Uso</a><a href="https://eternizamemorias.com.br/privacidade" target="_blank" rel="noreferrer">Política de Privacidade</a><div className="footer__help">Precisa de ajuda?<br /><a href="mailto:contato@eternizandomomentos.com">contato@eternizandomomentos.com</a></div></footer>
         </div>
-        {!pixVisible && showBottomCta && <div className="cta-dock co-dock"><button className="cta cta--subscribe co-dock__btn" type="button" onClick={() => setContactOpen(true)}><span className="co-dock__txt">QUERO MEU REENCONTRO</span><span className="co-dock__preco">{formatBRL(ticketPrice)}</span></button></div>}
+        {!pixVisible && showBottomCta && <div className="cta-dock co-dock"><button className="cta cta--subscribe co-dock__btn" type="button" onClick={openContact}><span className="co-dock__txt">QUERO MEU REENCONTRO</span><span className="co-dock__preco">{formatBRL(ticketPrice)}</span></button></div>}
       </section>
 
       <section className={screenClass(7, screen)} id="screen-7" data-screen="7">
