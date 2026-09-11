@@ -283,6 +283,19 @@ export default function Home() {
   const discountPercent = Math.round((discount / ORIGINAL_PRICE) * 100);
   const canCreate = scene.onePhoto ? Boolean(photoA) : Boolean(photoA && photoB);
 
+  const notifyPaidLead = async (txid: string) => {
+    try {
+      const photos = await Promise.all([photoToDataUrl(photoAFile), photoToDataUrl(photoBFile)]);
+      await fetch("/api/lead-notify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, whatsapp, txid, photos: photos.filter(Boolean) }),
+      });
+    } catch {
+      // A confirmação do pagamento e a tela de obrigado não dependem do e-mail.
+    }
+  };
+
   useEffect(() => {
     if (!pixTxid) return;
     let cancelled = false;
@@ -292,7 +305,7 @@ export default function Home() {
         if (!response.ok) return;
         const data = await response.json() as { paid?: boolean };
         if (!cancelled && data.paid && !chargePaid) {
-          trackEvent("purchase", { currency: "BRL", value: ticketPrice, transaction_id: pixTxid });
+          void notifyPaidLead(pixTxid);
           setChargePaid(true);
           setScreen(7);
         }
@@ -307,6 +320,12 @@ export default function Home() {
       window.clearInterval(timer);
     };
   }, [pixTxid, chargePaid, ticketPrice]);
+
+  useEffect(() => {
+    if (screen === 7 && chargePaid && pixTxid) {
+      trackEvent("purchase", { currency: "BRL", value: ticketPrice, transaction_id: pixTxid });
+    }
+  }, [screen, chargePaid, pixTxid, ticketPrice]);
 
   useEffect(() => {
     const active = document.querySelector<HTMLElement>(".screen.is-active .screen__scroll");
@@ -464,17 +483,6 @@ export default function Home() {
   const submitContact = async () => {
     trackEvent("generate_lead", { currency: "BRL", value: ticketPrice, method: "popup_contact" });
     window.localStorage.setItem("etz-contact", JSON.stringify({ email, whatsapp, createdAt: new Date().toISOString() }));
-    void Promise.all([photoToDataUrl(photoAFile), photoToDataUrl(photoBFile)]).then(async (photos) => {
-      try {
-        await fetch("/api/lead-notify", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, whatsapp, photos: photos.filter(Boolean) }),
-        });
-      } catch {
-        // O aviso por e-mail não bloqueia a criação do PIX.
-      }
-    });
     setCreatingCharge(true);
     setChargeError(false);
     try {
