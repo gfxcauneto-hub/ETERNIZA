@@ -54,7 +54,9 @@ function trackEvent(name: string, params: Record<string, unknown> = {}) {
   const analyticsWindow = window as Window & {
     gtag?: (command: string, eventName: string, eventParams?: Record<string, unknown>) => void;
     clarity?: (command: string, key: string, value: string) => void;
+    dataLayer?: Array<Record<string, unknown>>;
   };
+  analyticsWindow.dataLayer?.push({ event: name, ...params });
   analyticsWindow.gtag?.("event", name, params);
   analyticsWindow.clarity?.("set", "funnel_event", name);
 }
@@ -334,6 +336,10 @@ export default function Home() {
   }, [screen, pixVisible]);
 
   useEffect(() => {
+    if (screen === 6) trackEvent("checkout_view", { currency: "BRL", value: ticketPrice, payment_type: "pix" });
+  }, [screen, ticketPrice]);
+
+  useEffect(() => {
     if (screen !== 6 || pixVisible) {
       setShowBottomCta(false);
       return;
@@ -432,6 +438,7 @@ export default function Home() {
   }, [screen, staticThumbnails]);
 
   useEffect(() => {
+    trackEvent("page_view", { page_title: "Eterniza Amor", page_location: window.location.href });
     let cancelled = false;
     const assignTicket = (seed: string) => {
       let hash = 0;
@@ -471,6 +478,7 @@ export default function Home() {
   };
 
   const chooseScene = (id: SceneId) => {
+    trackEvent("select_item", { item_id: id, item_name: scenes.find((item) => item.id === id)?.title || id });
     setSelectedScene(id);
     setHasChosenScene(true);
     if (id === "abracojesus") {
@@ -499,6 +507,7 @@ export default function Home() {
       setPixQrCode(charge.qrCodeDataUrl);
       setPixTxid(charge.txid);
       setCountdownSeconds(charge.expiresInSeconds);
+      trackEvent("pix_generated", { currency: "BRL", value: ticketPrice, transaction_id: charge.txid, payment_type: "pix" });
       setContactOpen(false);
       setPixVisible(true);
     } catch (error) {
