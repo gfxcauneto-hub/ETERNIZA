@@ -54,7 +54,20 @@ function photoToDataUrl(file: File | null) {
   if (!file) return Promise.resolve(null);
   return new Promise<{ filename: string; mimeType: string; contentBase64: string } | null>((resolve) => {
     const reader = new FileReader();
-    reader.onload = () => resolve({ filename: file.name, mimeType: file.type || "image/jpeg", contentBase64: String(reader.result) });
+    reader.onload = () => {
+      const image = new Image();
+      image.onload = () => {
+        const maxSide = 1600;
+        const scale = Math.min(1, maxSide / Math.max(image.naturalWidth, image.naturalHeight));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+        canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+        canvas.getContext("2d")?.drawImage(image, 0, 0, canvas.width, canvas.height);
+        resolve({ filename: `${file.name.replace(/\.[^.]+$/, "")}.jpg`, mimeType: "image/jpeg", contentBase64: canvas.toDataURL("image/jpeg", 0.82) });
+      };
+      image.onerror = () => resolve(null);
+      image.src = String(reader.result);
+    };
     reader.onerror = () => resolve(null);
     reader.readAsDataURL(file);
   });
@@ -446,7 +459,6 @@ export default function Home() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email, whatsapp, photos: photos.filter(Boolean) }),
-          keepalive: true,
         });
       } catch {
         // O aviso por e-mail não bloqueia a criação do PIX.
