@@ -1915,3 +1915,7 @@ body.restauro #screen-1 .cta{ height:60px; font-size:17.5px; }
 .co-trust__item strong { display: block; color: rgba(255,255,255,.92); font-size: 11px; line-height: 1.2; }
 .co-trust__item small { display: block; margin-top: 3px; color: rgba(255,255,255,.58); font-size: 10px; line-height: 1.25; }
 @media (max-width: 430px) { .co-trust { gap: 5px; } .co-trust__item { padding-inline: 4px; } .co-trust__item strong { font-size: 10px; } .co-trust__item small { font-size: 9px; } }
+
+/* Ajustes solicitados: botão ligeiramente mais abaixo e loop mais ágil. */
+#coPix .pix-copy--hero { margin-top: 14px; }
+.proof-slide-out, .proof-slide-in { animation-duration: .72s; }

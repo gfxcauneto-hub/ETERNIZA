@@ -130,7 +130,7 @@ function ProofCarousel() {
         }, 1150);
         return (index + 1) % assets.proof.length;
       });
-    }, 6500);
+    }, 4000);
     return () => window.clearInterval(timer);
   }, []);
 
@@ -664,11 +664,6 @@ export default function Home() {
             <h1 className="co-title">Você está a 1 passo de reencontrar quem partiu</h1>
             <div className="co-microproof">⭐️ 4,9/5 · <b>milhares de famílias</b> emocionadas</div>
           </div>
-          <div className="co-trust" aria-label="Informações de segurança e entrega">
-            <div className="co-trust__item"><span className="co-trust__icon">🔒</span><span><strong>Pagamento protegido</strong><small>Processado pela Efí via PIX</small></span></div>
-            <div className="co-trust__item"><span className="co-trust__icon">⚡</span><span><strong>Entrega após confirmação</strong><small>Seu pedido entra na fila automaticamente</small></span></div>
-            <div className="co-trust__item"><span className="co-trust__icon">✓</span><span><strong>Compra única</strong><small>Garantia de 14 dias</small></span></div>
-          </div>
           <div className="cocheck" id="coCheck">
             <div className="plans plans--single" id="plans">
               <button className="plan is-selected plan--bloco plan--bloco-v1" type="button">
@@ -720,7 +715,7 @@ export default function Home() {
       </section>
 
       <section className={screenClass(7, screen)} id="screen-7" data-screen="7">
-        <div className="screen__scroll"><div className="gen"><div className="gen__h">🎉 Seu reencontro está pronto!</div><div className="gen__sub">Seu vídeo do reencontro entra na fila e chega no WhatsApp 💛</div></div></div>
+        <div className="screen__scroll"><div className="gen"><div className="gen__h">🎉 Pagamento confirmado!</div><div className="gen__sub">Seu vídeo do reencontro foi recebido e entrou na fila de produção. Você receberá a atualização no WhatsApp 💛</div></div></div>
       </section>
 
       <ContactModal open={contactOpen} email={email} whatsapp={whatsapp} onEmail={setEmail} onWhatsapp={setWhatsapp} onClose={() => setContactOpen(false)} onSubmit={() => { void submitContact(); }} submitting={creatingCharge} submitError={chargeError} />
