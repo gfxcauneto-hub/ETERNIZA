@@ -32,7 +32,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const transporter = nodemailer.createTransport({ host: process.env.SMTP_HOST, port: Number(process.env.SMTP_PORT), secure: process.env.SMTP_SECURE === "true", auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASSWORD } });
-    await transporter.sendMail({ from: process.env.SMTP_FROM || process.env.SMTP_USER, to: DESTINATION, replyTo: email, subject: `Novo lead Eterniza Amor — ${whatsapp}`, text: `Novo contato recebido pelo site Eterniza Amor.\n\nE-mail: ${email}\nWhatsApp: ${whatsapp}\nFotos anexadas: ${attachments.length}`, attachments });
+    await transporter.sendMail({ from: process.env.SMTP_USER, to: DESTINATION, replyTo: email, subject: `Novo lead Eterniza Amor — ${whatsapp}`, text: `Novo contato recebido pelo site Eterniza Amor.\n\nE-mail: ${email}\nWhatsApp: ${whatsapp}\nFotos anexadas: ${attachments.length}`, attachments });
     return res.status(200).json({ accepted: true, delivered: true });
   } catch (error) {
     console.error("[Lead] SMTP delivery failed", error instanceof Error ? error.message : "unknown");
