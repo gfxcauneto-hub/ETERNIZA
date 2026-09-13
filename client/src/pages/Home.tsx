@@ -388,6 +388,16 @@ export default function Home() {
     if (screen !== 21 || staticThumbnails) return;
     const videos = Array.from(document.querySelectorAll<HTMLVideoElement>("#screen-21 video"));
     const visible = new Set<HTMLVideoElement>();
+    const hydrateSecondaryVideos = () => {
+      videos.forEach((video) => {
+        const deferredSrc = video.dataset.src;
+        if (deferredSrc && !video.getAttribute("src")) {
+          video.setAttribute("src", deferredSrc);
+          video.load();
+        }
+      });
+      videos.forEach(play);
+    };
     const play = (video: HTMLVideoElement) => {
       if (document.hidden || !visible.has(video)) return;
       video.defaultMuted = true;
@@ -426,12 +436,14 @@ export default function Home() {
     window.addEventListener("pageshow", resume);
     document.addEventListener("touchend", resume, { passive: true });
     document.addEventListener("click", resume);
+    const idle = window.setTimeout(hydrateSecondaryVideos, 120);
     return () => {
       observer.disconnect();
       document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("pageshow", resume);
       document.removeEventListener("touchend", resume);
       document.removeEventListener("click", resume);
+      window.clearTimeout(idle);
       videos.forEach((video) => {
         video.removeEventListener("loadeddata", resume);
         video.removeEventListener("canplay", resume);
@@ -573,7 +585,7 @@ export default function Home() {
                 {staticThumbnails ? (
                   <img className="estilo__thumbnail" src={item.poster} alt="" decoding="async" draggable={false} />
                 ) : (
-                  <video poster={item.poster} muted loop playsInline autoPlay controls={false} disablePictureInPicture disableRemotePlayback preload={index === 0 ? "auto" : "metadata"} src={item.video} />
+                  <video poster={item.poster} muted loop playsInline autoPlay controls={false} disablePictureInPicture disableRemotePlayback preload={index === 0 ? "auto" : "none"} {...(index === 0 ? { src: item.video } : { "data-src": item.video })} />
                 )}
                 <span className="estilo__txt">
                   <b>{item.title}</b>
