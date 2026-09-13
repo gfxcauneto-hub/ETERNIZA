@@ -55,9 +55,12 @@ function trackEvent(name: string, params: Record<string, unknown> = {}) {
     gtag?: (command: string, eventName: string, eventParams?: Record<string, unknown>) => void;
     clarity?: (command: string, key: string, value: string) => void;
     dataLayer?: Array<Record<string, unknown>>;
+    ttq?: { track?: (eventName: string, eventParams?: Record<string, unknown>) => void };
   };
   analyticsWindow.dataLayer?.push({ event: name, ...params });
   analyticsWindow.gtag?.("event", name, params);
+  const tiktokEvent = name === "begin_checkout" ? "InitiateCheckout" : name === "generate_lead" ? "SubmitForm" : name === "pix_generated" ? "AddPaymentInfo" : name === "purchase" ? "CompletePayment" : null;
+  if (tiktokEvent) analyticsWindow.ttq?.track?.(tiktokEvent, params);
   analyticsWindow.clarity?.("set", "funnel_event", name);
 }
 
