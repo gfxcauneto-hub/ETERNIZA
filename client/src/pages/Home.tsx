@@ -562,7 +562,7 @@ export default function Home() {
           <h1 className="heading">Escolha o cenário</h1>
           <p className="estilo-sub">Toque na cena e veja novamente quem fez tanta&nbsp;falta 💛</p>
           <div className="estilos">
-            {scenes.map((item) => (
+            {scenes.map((item, index) => (
               <button
                 className={`estilo ${hasChosenScene && selectedScene === item.id ? "is-picked" : ""}`}
                 key={item.id}
@@ -573,7 +573,7 @@ export default function Home() {
                 {staticThumbnails ? (
                   <img className="estilo__thumbnail" src={item.poster} alt="" decoding="async" draggable={false} />
                 ) : (
-                  <video poster={item.poster} muted loop playsInline autoPlay controls={false} disablePictureInPicture disableRemotePlayback preload="auto" src={item.video} />
+                  <video poster={item.poster} muted loop playsInline autoPlay controls={false} disablePictureInPicture disableRemotePlayback preload={index === 0 ? "auto" : "metadata"} src={item.video} />
                 )}
                 <span className="estilo__txt">
                   <b>{item.title}</b>
